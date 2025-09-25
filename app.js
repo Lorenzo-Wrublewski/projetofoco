@@ -266,11 +266,7 @@ document.addEventListener('keydown', (e)=>{
   }
 });
 
-if(items.length === 0){
-  items = [
-  ];
-  saveState(items);
-}
-render();
+
+
 
 
