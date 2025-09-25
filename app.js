@@ -268,12 +268,9 @@ document.addEventListener('keydown', (e)=>{
 
 if(items.length === 0){
   items = [
-    {id:uid(), title:'Estudar Power BI (prioridade!)', notes:'Medidas DAX e boas práticas.\nCriar dashboard exemplo.', color:'#7c3aed', lane:'max', order:1, due:''},
-    {id:uid(), title:'SQL Server', notes:'Praticar JOINS e CTEs.\nMontar queries de manutenção.', color:'#2563eb', lane:'mid', order:1, due:''},
-    {id:uid(), title:'Python', notes:'Automação de relatórios.\nExplorar pandas.', color:'#059669', lane:'mid', order:2, due:''},
-    {id:uid(), title:'Projeto Capivara Game', notes:'Ajustar parallax e colisões.', color:'#ea580c', lane:'min', order:1, due:''}
   ];
   saveState(items);
 }
 render();
+
 
