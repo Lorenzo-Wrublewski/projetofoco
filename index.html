@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=390, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
+  <title>Projeto Foco</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="shortcut icon" href="https://i.imgur.com/Cq8GtlD.png" />
+</head>
+<body>
+  <div class="app-shell">
+    <header class="topbar">
+      <div class="brand">
+        <span class="dot dot-max"></span>
+        <span class="dot dot-mid"></span>
+        <span class="dot dot-min"></span>
+        <h1>Projeto Foco</h1>
+      </div>
+
+      <div class="actions">
+        <button id="btnAdd" class="btn primary" title="Adicionar projeto">+ Projeto</button>
+        <button id="btnClear" class="btn subtle" title="Limpar tudo (com confirmação)">Limpar</button>
+        <button id="btnTheme" class="btn ghost" title="Alternar tema">🌓</button>
+      </div>
+    </header>
+
+    <main class="board" id="board">
+      <!-- Colunas -->
+      <section class="lane" data-lane="max">
+        <header class="lane-header">
+          <h2>Foco máximo</h2>
+          <span class="badge" data-count="max">0</span>
+        </header>
+        <div class="lane-drop" data-lane="max"></div>
+      </section>
+
+      <section class="lane" data-lane="mid">
+        <header class="lane-header">
+          <h2>Foco intermediário</h2>
+          <span class="badge" data-count="mid">0</span>
+        </header>
+        <div class="lane-drop" data-lane="mid"></div>
+      </section>
+
+      <section class="lane" data-lane="min">
+        <header class="lane-header">
+          <h2>Foco mínimo</h2>
+          <span class="badge" data-count="min">0</span>
+        </header>
+        <div class="lane-drop" data-lane="min"></div>
+      </section>
+    </main>
+  </div>
+
+  <!-- Modal Projeto -->
+  <dialog id="projectDialog" class="dialog">
+    <form id="projectForm" method="dialog">
+      <h3 id="dialogTitle">Novo projeto</h3>
+
+      <label class="field">
+        <span>Título</span>
+        <input id="projTitle" type="text" placeholder="Ex.: Finalizar TCC" required maxlength="80">
+      </label>
+
+      <label class="field">
+        <span>Notas (opcional)</span>
+        <textarea id="projNotes" rows="3" placeholder="Detalhes rápidos, próximos passos, etc."></textarea>
+      </label>
+
+      <div class="field">
+        <span>Etiqueta (cor)</span>
+        <div class="color-row" id="colorRow">
+          <button type="button" class="color-pick" data-color="#7c3aed" style="--c:#7c3aed" aria-label="Roxo"></button>
+          <button type="button" class="color-pick" data-color="#2563eb" style="--c:#2563eb" aria-label="Azul"></button>
+          <button type="button" class="color-pick" data-color="#059669" style="--c:#059669" aria-label="Verde"></button>
+          <button type="button" class="color-pick" data-color="#ea580c" style="--c:#ea580c" aria-label="Laranja"></button>
+          <button type="button" class="color-pick" data-color="#dc2626" style="--c:#dc2626" aria-label="Vermelho"></button>
+          <button type="button" class="color-pick" data-color=""      style="--c:transparent" aria-label="Sem cor">∅</button>
+        </div>
+      </div>
+
+      <div class="row">
+        <label class="field grow">
+          <span>Tier inicial</span>
+          <select id="projLane">
+            <option value="max">Foco máximo</option>
+            <option value="mid">Foco intermediário</option>
+            <option value="min">Foco mínimo</option>
+          </select>
+        </label>
+
+        <label class="field">
+          <span>Prazo (opcional)</span>
+          <input id="projDue" type="date">
+        </label>
+      </div>
+
+      <menu class="dialog-actions">
+        <button value="cancel" class="btn ghost">Cancelar</button>
+        <button id="btnSaveProject" class="btn primary">Salvar</button>
+      </menu>
+      <input type="hidden" id="projId">
+      <input type="hidden" id="projColor">
+    </form>
+  </dialog>
+
+  <template id="cardTemplate">
+    <article class="card" draggable="true">
+      <div class="card-head">
+        <div class="pill" data-pill></div>
+        <h4 class="title" data-title></h4>
+      </div>
+      <p class="notes" data-notes></p>
+      <div class="meta">
+        <span class="due" data-due></span>
+        <div class="buttons">
+          <button class="icon-btn" data-edit title="Editar">✏️</button>
+          <button class="icon-btn danger" data-delete title="Excluir">🗑️</button>
+        </div>
+      </div>
+    </article>
+  </template>
+
+  <script src="app.js"></script>
+</body>
+</html>
