@@ -46,7 +46,6 @@ body{
   padding: 18px;
 }
 
-/* Topbar */
 .topbar{
   position: sticky; top: 0; z-index: 10;
   display:flex; align-items:center; justify-content:space-between;
@@ -121,7 +120,6 @@ body{
   transition: background var(--trans);
 }
 
-/* Cards */
 .card{
   background: #0b0f1c20;
   backdrop-filter: blur(2px);
@@ -162,7 +160,6 @@ body{
 .icon-btn:hover{ background: rgba(255,255,255,.12); transform: translateY(-1px); }
 .icon-btn.danger:hover{ background: rgba(239,68,68,.22); }
 
-/* Dialog */
 .dialog{
   border: 0; border-radius: 16px; padding: 0; max-width: 520px; width: 92vw; color: var(--text);
   background: linear-gradient(180deg, var(--panel), var(--panel-2)); box-shadow: var(--shadow);
@@ -203,8 +200,8 @@ body{
 }
 .dialog .btn{ padding: 10px 14px; }
 
-/* Responsivo */
 @media (max-width: 980px){
   .board{ grid-template-columns: 1fr; }
   .lane{ min-height: auto; }
 }
+
