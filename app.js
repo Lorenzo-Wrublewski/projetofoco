@@ -1,10 +1,17 @@
+// ==============================
+// Projeto Foco - app.js (robusto)
+// ==============================
 
-const LS_KEY = 'projetos_foco_v1';   // onde salvamos os projetos
-const THEME_KEY = 'pf_theme';        // onde salvamos o tema (light/dark)
+const LS_KEY   = 'projetos_foco_v1'; // storage dos cards
+const THEME_KEY = 'pf_theme';        // storage do tema
 
+// ---------- Storage ----------
 function loadState(){
   try{
-    return JSON.parse(localStorage.getItem(LS_KEY)) ?? [];
+    const raw = localStorage.getItem(LS_KEY);
+    if(!raw) return [];
+    const arr = JSON.parse(raw);
+    return Array.isArray(arr) ? arr : [];
   }catch{
     return [];
   }
@@ -13,267 +20,299 @@ function saveState(items){
   localStorage.setItem(LS_KEY, JSON.stringify(items));
 }
 
+// ---------- Helpers ----------
+const uid = () => Math.random().toString(36).slice(2,9);
 const $  = (sel, el=document) => el.querySelector(sel);
 const $$ = (sel, el=document) => Array.from(el.querySelectorAll(sel));
-const uid = () => Math.random().toString(36).slice(2,9);
 
 function fmtDate(iso){
   if(!iso) return '';
-  const d = new Date(iso + 'T00:00:00'); // normaliza timezone
-  return d.toLocaleDateString('pt-BR', {day:'2-digit', month:'2-digit', year:'numeric'});
+  const d = new Date(iso + 'T00:00:00');
+  return d.toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit',year:'numeric'});
 }
 
-// Estado principal: {id, title, notes, color, lane, order, due}
-let items = loadState();
+const LANE_RANK = { max:0, mid:1, min:2 }; // ordenação determinística por coluna
 
-const lanes = $$('.lane-drop');
-const badgeMax = document.querySelector('[data-count="max"]');
-const badgeMid = document.querySelector('[data-count="mid"]');
-const badgeMin = document.querySelector('[data-count="min"]');
+// Estado em memória
+let items = [];
 
-const dlg = $('#projectDialog');
-const form = $('#projectForm');
-const dialogTitle = $('#dialogTitle');
-const inpId = $('#projId');
-const inpTitle = $('#projTitle');
-const inpNotes = $('#projNotes');
-const inpLane = $('#projLane');
-const inpDue  = $('#projDue');
-const inpColor= $('#projColor');
-const colorRow = $('#colorRow');
+// Adia TODA a ligação de elementos até o DOM estar pronto
+window.addEventListener('DOMContentLoaded', () => {
+  // ----- refs de UI -----
+  const lanes = $$('.lane-drop');
+  const badgeMax = document.querySelector('[data-count="max"]');
+  const badgeMid = document.querySelector('[data-count="mid"]');
+  const badgeMin = document.querySelector('[data-count="min"]');
 
-const btnAdd = $('#btnAdd');
-const btnClear = $('#btnClear');
-const btnTheme = $('#btnTheme');
-const tpl = $('#cardTemplate');
+  const dlg = $('#projectDialog');
+  const form = $('#projectForm');
+  const dialogTitle = $('#dialogTitle');
+  const inpId = $('#projId');
+  const inpTitle = $('#projTitle');
+  const inpNotes = $('#projNotes');
+  const inpLane = $('#projLane');
+  const inpDue  = $('#projDue');
+  const inpColor= $('#projColor');
+  const colorRow = $('#colorRow');
 
-(function initTheme(){
-  const saved = localStorage.getItem(THEME_KEY);
-  if(saved === 'light') document.documentElement.style.setProperty('color-scheme','light');
-  if(saved === 'dark')  document.documentElement.style.setProperty('color-scheme','dark');
-})();
-btnTheme.addEventListener('click', () => {
-  // tenta ler o tema atual; se vier vazio, assume 'light' por padrão
-  let cur = getComputedStyle(document.documentElement).getPropertyValue('color-scheme').trim();
-  if(!cur) cur = 'light';
-  const next = cur === 'dark' ? 'light' : 'dark';
-  document.documentElement.style.setProperty('color-scheme', next);
-  localStorage.setItem(THEME_KEY, next);
-});
+  const btnAdd = $('#btnAdd');
+  const btnClear = $('#btnClear');
+  const btnTheme = $('#btnTheme');
+  const tpl = $('#cardTemplate');
 
-function render(){
-  // limpa colunas
-  lanes.forEach(l => l.innerHTML = '');
-
-  // agrupa por lane e ordena por order
-  const byLane = {max:[], mid:[], min:[]};
-  items
-    .slice() // evita mutar ao sort
-    .sort((a,b)=> (a.lane===b.lane ? a.order-b.order : a.lane.localeCompare(b.lane)))
-    .forEach(it => byLane[it.lane]?.push(it));
-
-  Object.entries(byLane).forEach(([lane, arr])=>{
-    const container = document.querySelector(`.lane-drop[data-lane="${lane}"]`);
-    arr.forEach(it => container.appendChild(renderCard(it)));
+  // ----- Tema -----
+  (function initTheme(){
+    const saved = localStorage.getItem(THEME_KEY);
+    if(saved === 'light') document.documentElement.style.setProperty('color-scheme','light');
+    if(saved === 'dark')  document.documentElement.style.setProperty('color-scheme','dark');
+  })();
+  btnTheme.addEventListener('click', () => {
+    let cur = getComputedStyle(document.documentElement).getPropertyValue('color-scheme').trim();
+    if(!cur) cur = 'light';
+    const next = cur === 'dark' ? 'light' : 'dark';
+    document.documentElement.style.setProperty('color-scheme', next);
+    localStorage.setItem(THEME_KEY, next);
   });
 
-  badgeMax.textContent = byLane.max.length;
-  badgeMid.textContent = byLane.mid.length;
-  badgeMin.textContent = byLane.min.length;
-}
+  // ----- Render -----
+  function render(){
+    lanes.forEach(l => l.innerHTML = '');
 
-function renderCard(it){
-  const node = tpl.content.firstElementChild.cloneNode(true);
-  node.dataset.id = it.id;
+    const byLane = {max:[], mid:[], min:[]};
+    items
+      .slice()
+      .sort((a,b) => {
+        const lr = (LANE_RANK[a.lane]??99) - (LANE_RANK[b.lane]??99);
+        if(lr !== 0) return lr;
+        const ao = Number.isFinite(a.order) ? a.order : 0;
+        const bo = Number.isFinite(b.order) ? b.order : 0;
+        return ao - bo;
+      })
+      .forEach(it => { if(byLane[it.lane]) byLane[it.lane].push(it); });
 
-  const pill  = node.querySelector('[data-pill]');
-  const title = node.querySelector('[data-title]');
-  const notes = node.querySelector('[data-notes]');
-  const due   = node.querySelector('[data-due]');
-
-  title.textContent = it.title;
-  notes.textContent = it.notes || '';
-  notes.style.display = it.notes ? 'block' : 'none';
-
-  if(it.color){
-    pill.style.background = it.color;
-    pill.style.borderColor = it.color + '88';
-  }else{
-    pill.style.background = 'transparent';
-    pill.style.borderColor = 'rgba(255,255,255,.15)';
-  }
-
-  due.textContent = it.due ? ('Prazo: ' + fmtDate(it.due)) : '';
-
-  node.querySelector('[data-edit]').addEventListener('click', () => openEdit(it.id));
-  node.querySelector('[data-delete]').addEventListener('click', () => del(it.id));
-
-  node.addEventListener('dragstart', onDragStart);
-  node.addEventListener('dragend', onDragEnd);
-
-  return node;
-}
-
-function add(data){
-  const laneItems = items.filter(x => x.lane === data.lane);
-  const maxOrder = laneItems.length ? Math.max(...laneItems.map(x=>x.order)) : 0;
-  items.push({
-    id: uid(),
-    title: data.title.trim(),
-    notes: (data.notes ?? '').trim(),
-    color: data.color || '',
-    lane: data.lane,
-    order: maxOrder + 1,
-    due: data.due || ''
-  });
-  saveState(items);
-  render();
-}
-function update(id, data){
-  const i = items.findIndex(x => x.id === id);
-  if(i<0) return;
-  items[i] = {...items[i], ...data, title: data.title.trim(), notes: (data.notes ?? '').trim()};
-  saveState(items);
-  render();
-}
-function del(id){
-  items = items.filter(x => x.id !== id);
-  saveState(items);
-  render();
-}
-
-btnAdd.addEventListener('click', () => openCreate());
-
-function openCreate(){
-  dialogTitle.textContent = 'Novo projeto';
-  form.reset();
-  inpId.value = '';
-  selectColorButton('');
-  if (!('showModal' in dlg)) return; // fallback simples
-  dlg.showModal();
-  setTimeout(()=> inpTitle.focus(), 50);
-}
-
-function openEdit(id){
-  const it = items.find(x => x.id === id);
-  if(!it) return;
-  dialogTitle.textContent = 'Editar projeto';
-  inpId.value = it.id;
-  inpTitle.value = it.title;
-  inpNotes.value = it.notes || '';
-  inpLane.value = it.lane;
-  inpDue.value = it.due || '';
-  selectColorButton(it.color || '');
-  dlg.showModal();
-}
-
-form.addEventListener('submit', (e)=>{
-  e.preventDefault();
-  const data = {
-    title: inpTitle.value,
-    notes: inpNotes.value,
-    lane:  inpLane.value,
-    due:   inpDue.value,
-    color: inpColor.value
-  };
-  if(!data.title.trim()) return;
-  const id = inpId.value;
-  if(id) update(id, data); else add(data);
-  dlg.close();
-});
-
-colorRow.addEventListener('click', (e)=>{
-  const btn = e.target.closest('.color-pick');
-  if(!btn) return;
-  selectColorButton(btn.dataset.color || '');
-});
-function selectColorButton(color){
-  inpColor.value = color;
-  $$('.color-pick').forEach(b => b.classList.toggle('active', (b.dataset.color||'') === color));
-}
-
-let dragId = null;
-
-function onDragStart(e){
-  const el = e.currentTarget;
-  dragId = el.dataset.id;
-  el.classList.add('dragging');
-  e.dataTransfer.effectAllowed = 'move';
-  e.dataTransfer.setData('text/plain', dragId);
-}
-function onDragEnd(e){
-  e.currentTarget.classList.remove('dragging');
-  dragId = null;
-}
-
-lanes.forEach(lane => {
-  lane.addEventListener('dragover', (e) => {
-    e.preventDefault(); // necessário para permitir drop
-    lane.classList.add('over');
-
-    // Reordenação visual (inserção antes/depois conforme posição do mouse)
-    const afterEl = getDragAfterElement(lane, e.clientY);
-    const dragging = document.querySelector('.card.dragging');
-    if(!dragging) return;
-    if(afterEl == null) lane.appendChild(dragging);
-    else lane.insertBefore(dragging, afterEl);
-  });
-
-  lane.addEventListener('dragleave', () => {
-    lane.classList.remove('over');
-  });
-
-  lane.addEventListener('drop', (e) => {
-    e.preventDefault();
-    lane.classList.remove('over');
-    const id = e.dataTransfer.getData('text/plain') || dragId;
-    if(!id) return;
-
-    const newLane = lane.dataset.lane;
-    const siblings = $$('.card', lane);
-
-    // Regrava lane + order de todos os cards da coluna
-    siblings.forEach((el, idx) => {
-      const cid = el.dataset.id;
-      const it = items.find(x => x.id === cid);
-      if(!it) return;
-      it.lane = newLane;
-      it.order = idx + 1;
+    Object.entries(byLane).forEach(([lane, arr])=>{
+      const container = document.querySelector(`.lane-drop[data-lane="${lane}"]`);
+      arr.forEach(it => container.appendChild(renderCard(it)));
     });
 
+    badgeMax.textContent = byLane.max.length;
+    badgeMid.textContent = byLane.mid.length;
+    badgeMin.textContent = byLane.min.length;
+  }
+
+  function renderCard(it){
+    const node = tpl.content.firstElementChild.cloneNode(true);
+    node.dataset.id = it.id;
+
+    const pill  = node.querySelector('[data-pill]');
+    const title = node.querySelector('[data-title]');
+    const notes = node.querySelector('[data-notes]');
+    const due   = node.querySelector('[data-due]');
+
+    title.textContent = it.title;
+    notes.textContent = it.notes || '';
+    notes.style.display = it.notes ? 'block' : 'none';
+
+    if(it.color){
+      pill.style.background = it.color;
+      pill.style.borderColor = it.color + '88';
+    }else{
+      pill.style.background = 'transparent';
+      pill.style.borderColor = 'rgba(255,255,255,.15)';
+    }
+    due.textContent = it.due ? ('Prazo: ' + fmtDate(it.due)) : '';
+
+    node.querySelector('[data-edit]').addEventListener('click', () => openEdit(it.id));
+    node.querySelector('[data-delete]').addEventListener('click', () => del(it.id));
+
+    node.addEventListener('dragstart', onDragStart);
+    node.addEventListener('dragend', onDragEnd);
+
+    return node;
+  }
+
+  // ----- CRUD -----
+  function add(data){
+    const laneItems = items.filter(x => x.lane === data.lane);
+    const maxOrder = laneItems.length ? Math.max(...laneItems.map(x=>Number.isFinite(x.order)?x.order:0)) : 0;
+    items.push({
+      id: uid(),
+      title: String(data.title||'').trim(),
+      notes: String(data.notes||'').trim(),
+      color: data.color || '',
+      lane: data.lane,
+      order: maxOrder + 1,
+      due: data.due || ''
+    });
+    saveState(items);
+    render();
+  }
+  function update(id, data){
+    const i = items.findIndex(x => x.id === id);
+    if(i<0) return;
+    items[i] = {
+      ...items[i],
+      ...data,
+      title: String(data.title||'').trim(),
+      notes: String(data.notes||'').trim()
+    };
+    saveState(items);
+    render();
+  }
+  function del(id){
+    items = items.filter(x => x.id !== id);
+    saveState(items);
+    render();
+  }
+
+  // ----- Diálogo -----
+  btnAdd.addEventListener('click', () => openCreate());
+
+  function openCreate(){
+    dialogTitle.textContent = 'Novo projeto';
+    form.reset();
+    inpId.value = '';
+    selectColorButton('');
+    if (!('showModal' in dlg)) return;
+    dlg.showModal();
+    setTimeout(()=> inpTitle.focus(), 0);
+  }
+  function openEdit(id){
+    const it = items.find(x => x.id === id);
+    if(!it) return;
+    dialogTitle.textContent = 'Editar projeto';
+    inpId.value = it.id;
+    inpTitle.value = it.title;
+    inpNotes.value = it.notes || '';
+    inpLane.value = it.lane;
+    inpDue.value = it.due || '';
+    selectColorButton(it.color || '');
+    dlg.showModal();
+  }
+  form.addEventListener('submit', (e)=>{
+    e.preventDefault();
+    const data = {
+      title: inpTitle.value,
+      notes: inpNotes.value,
+      lane:  inpLane.value,
+      due:   inpDue.value,
+      color: inpColor.value
+    };
+    if(!String(data.title).trim()) return;
+    const id = inpId.value;
+    if(id) update(id, data); else add(data);
+    dlg.close();
+  });
+
+  // ----- Cores -----
+  colorRow.addEventListener('click', (e)=>{
+    const btn = e.target.closest('.color-pick');
+    if(!btn) return;
+    selectColorButton(btn.dataset.color || '');
+  });
+  function selectColorButton(color){
+    inpColor.value = color;
+    $$('.color-pick').forEach(b => b.classList.toggle('active', (b.dataset.color||'') === color));
+  }
+
+  // ----- Drag & Drop -----
+  let dragId = null;
+
+  function onDragStart(e){
+    const el = e.currentTarget;
+    dragId = el.dataset.id;
+    el.classList.add('dragging');
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', dragId);
+  }
+  function onDragEnd(e){
+    e.currentTarget.classList.remove('dragging');
+    dragId = null;
+  }
+
+  lanes.forEach(lane => {
+    lane.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      lane.classList.add('over');
+
+      const afterEl = getDragAfterElement(lane, e.clientY);
+      const dragging = document.querySelector('.card.dragging');
+      if(!dragging) return;
+      if(afterEl == null) lane.appendChild(dragging);
+      else lane.insertBefore(dragging, afterEl);
+    });
+
+    lane.addEventListener('dragleave', () => {
+      lane.classList.remove('over');
+    });
+
+    lane.addEventListener('drop', (e) => {
+      e.preventDefault();
+      lane.classList.remove('over');
+      const id = e.dataTransfer.getData('text/plain') || dragId;
+      if(!id) return;
+
+      const newLane = lane.dataset.lane;
+      const siblings = $$('.card', lane);
+
+      siblings.forEach((el, idx) => {
+        const cid = el.dataset.id;
+        const it = items.find(x => x.id === cid);
+        if(!it) return;
+        it.lane = newLane;
+        it.order = idx + 1;
+      });
+      saveState(items);
+      render();
+    });
+  });
+
+  function getDragAfterElement(container, y){
+    const els = [...container.querySelectorAll('.card:not(.dragging)')];
+    return els.reduce((closest, child) => {
+      const box = child.getBoundingClientRect();
+      const offset = y - box.top - box.height/2;
+      if(offset < 0 && offset > closest.offset){
+        return { offset, element: child };
+      } else {
+        return closest;
+      }
+    }, { offset: Number.NEGATIVE_INFINITY }).element;
+  }
+
+  // ----- Limpar -----
+  btnClear.addEventListener('click', ()=>{
+    const ok = confirm('Isso vai apagar todos os projetos. Deseja continuar?');
+    if(!ok) return;
+    items = [];
     saveState(items);
     render();
   });
-});
 
-function getDragAfterElement(container, y){
-  const els = [...container.querySelectorAll('.card:not(.dragging)')];
-  return els.reduce((closest, child) => {
-    const box = child.getBoundingClientRect();
-    const offset = y - box.top - box.height/2;
-    if(offset < 0 && offset > closest.offset){
-      return { offset, element: child };
-    } else {
-      return closest;
+  // ----- Atalhos -----
+  document.addEventListener('keydown', (e)=>{
+    if((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'n'){
+      e.preventDefault();
+      openCreate();
     }
-  }, { offset: Number.NEGATIVE_INFINITY }).element;
-}
+  });
 
-btnClear.addEventListener('click', ()=>{
-  const ok = confirm('Isso vai apagar todos os projetos. Deseja continuar?');
-  if(!ok) return;
-  items = [];
+  // ====== Inicialização ======
+  // 1) Carrega do storage
+  items = loadState();
+
+  // 2) Migração: garante 'order' sequencial por lane (para dados antigos)
+  const lanesList = ['max','mid','min'];
+  lanesList.forEach(lname => {
+    const laneItems = items.filter(x => x.lane === lname);
+    if(laneItems.some(x => !Number.isFinite(x.order))){
+      laneItems
+        .sort((a,b)=> (a.title||'').localeCompare(b.title||''))
+        .forEach((it, idx) => { it.order = idx + 1; });
+    }
+  });
+
+  // 3) Salva (se houve migração) e renderiza
   saveState(items);
   render();
 });
-
-document.addEventListener('keydown', (e)=>{
-  if((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'n'){
-    e.preventDefault();
-    openCreate();
-  }
-});
-
-// IMPORTANTE: não zerar o localStorage aqui.
-// Basta renderizar o que já foi carregado em `items`.
-render();
