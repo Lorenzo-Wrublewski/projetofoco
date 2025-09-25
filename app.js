@@ -1,11 +1,7 @@
-// ==============================
-// Projeto Foco - app.js (robusto)
-// ==============================
 
-const LS_KEY   = 'projetos_foco_v1'; // storage dos cards
-const THEME_KEY = 'pf_theme';        // storage do tema
+const LS_KEY   = 'projetos_foco_v1';
+const THEME_KEY = 'pf_theme';        
 
-// ---------- Storage ----------
 function loadState(){
   try{
     const raw = localStorage.getItem(LS_KEY);
@@ -20,7 +16,6 @@ function saveState(items){
   localStorage.setItem(LS_KEY, JSON.stringify(items));
 }
 
-// ---------- Helpers ----------
 const uid = () => Math.random().toString(36).slice(2,9);
 const $  = (sel, el=document) => el.querySelector(sel);
 const $$ = (sel, el=document) => Array.from(el.querySelectorAll(sel));
@@ -33,12 +28,9 @@ function fmtDate(iso){
 
 const LANE_RANK = { max:0, mid:1, min:2 }; // ordenação determinística por coluna
 
-// Estado em memória
 let items = [];
 
-// Adia TODA a ligação de elementos até o DOM estar pronto
 window.addEventListener('DOMContentLoaded', () => {
-  // ----- refs de UI -----
   const lanes = $$('.lane-drop');
   const badgeMax = document.querySelector('[data-count="max"]');
   const badgeMid = document.querySelector('[data-count="mid"]');
@@ -60,7 +52,6 @@ window.addEventListener('DOMContentLoaded', () => {
   const btnTheme = $('#btnTheme');
   const tpl = $('#cardTemplate');
 
-  // ----- Tema -----
   (function initTheme(){
     const saved = localStorage.getItem(THEME_KEY);
     if(saved === 'light') document.documentElement.style.setProperty('color-scheme','light');
@@ -74,7 +65,6 @@ window.addEventListener('DOMContentLoaded', () => {
     localStorage.setItem(THEME_KEY, next);
   });
 
-  // ----- Render -----
   function render(){
     lanes.forEach(l => l.innerHTML = '');
 
@@ -131,7 +121,6 @@ window.addEventListener('DOMContentLoaded', () => {
     return node;
   }
 
-  // ----- CRUD -----
   function add(data){
     const laneItems = items.filter(x => x.lane === data.lane);
     const maxOrder = laneItems.length ? Math.max(...laneItems.map(x=>Number.isFinite(x.order)?x.order:0)) : 0;
@@ -165,7 +154,6 @@ window.addEventListener('DOMContentLoaded', () => {
     render();
   }
 
-  // ----- Diálogo -----
   btnAdd.addEventListener('click', () => openCreate());
 
   function openCreate(){
@@ -204,7 +192,6 @@ window.addEventListener('DOMContentLoaded', () => {
     dlg.close();
   });
 
-  // ----- Cores -----
   colorRow.addEventListener('click', (e)=>{
     const btn = e.target.closest('.color-pick');
     if(!btn) return;
@@ -215,7 +202,6 @@ window.addEventListener('DOMContentLoaded', () => {
     $$('.color-pick').forEach(b => b.classList.toggle('active', (b.dataset.color||'') === color));
   }
 
-  // ----- Drag & Drop -----
   let dragId = null;
 
   function onDragStart(e){
@@ -280,7 +266,6 @@ window.addEventListener('DOMContentLoaded', () => {
     }, { offset: Number.NEGATIVE_INFINITY }).element;
   }
 
-  // ----- Limpar -----
   btnClear.addEventListener('click', ()=>{
     const ok = confirm('Isso vai apagar todos os projetos. Deseja continuar?');
     if(!ok) return;
@@ -289,7 +274,6 @@ window.addEventListener('DOMContentLoaded', () => {
     render();
   });
 
-  // ----- Atalhos -----
   document.addEventListener('keydown', (e)=>{
     if((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'n'){
       e.preventDefault();
@@ -297,11 +281,8 @@ window.addEventListener('DOMContentLoaded', () => {
     }
   });
 
-  // ====== Inicialização ======
-  // 1) Carrega do storage
   items = loadState();
 
-  // 2) Migração: garante 'order' sequencial por lane (para dados antigos)
   const lanesList = ['max','mid','min'];
   lanesList.forEach(lname => {
     const laneItems = items.filter(x => x.lane === lname);
@@ -312,7 +293,7 @@ window.addEventListener('DOMContentLoaded', () => {
     }
   });
 
-  // 3) Salva (se houve migração) e renderiza
   saveState(items);
   render();
 });
+
