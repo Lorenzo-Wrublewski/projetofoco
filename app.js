@@ -1,28 +1,32 @@
-const LS_KEY = 'projetos_foco_v1';
+
+const LS_KEY = 'projetos_foco_v1';   // onde salvamos os projetos
+const THEME_KEY = 'pf_theme';        // onde salvamos o tema (light/dark)
 
 function loadState(){
   try{
     return JSON.parse(localStorage.getItem(LS_KEY)) ?? [];
-  }catch{ return []; }
+  }catch{
+    return [];
+  }
 }
 function saveState(items){
   localStorage.setItem(LS_KEY, JSON.stringify(items));
 }
 
-const $ = (sel, el=document) => el.querySelector(sel);
+const $  = (sel, el=document) => el.querySelector(sel);
 const $$ = (sel, el=document) => Array.from(el.querySelectorAll(sel));
 const uid = () => Math.random().toString(36).slice(2,9);
 
 function fmtDate(iso){
   if(!iso) return '';
-  const d = new Date(iso + 'T00:00:00'); // normaliza
+  const d = new Date(iso + 'T00:00:00'); // normaliza timezone
   return d.toLocaleDateString('pt-BR', {day:'2-digit', month:'2-digit', year:'numeric'});
 }
 
-let items = loadState(); // {id, title, notes, color, lane, order, due}
+// Estado principal: {id, title, notes, color, lane, order, due}
+let items = loadState();
 
 const lanes = $$('.lane-drop');
-const board = $('#board');
 const badgeMax = document.querySelector('[data-count="max"]');
 const badgeMid = document.querySelector('[data-count="mid"]');
 const badgeMin = document.querySelector('[data-count="min"]');
@@ -43,14 +47,15 @@ const btnClear = $('#btnClear');
 const btnTheme = $('#btnTheme');
 const tpl = $('#cardTemplate');
 
-const THEME_KEY = 'pf_theme';
 (function initTheme(){
   const saved = localStorage.getItem(THEME_KEY);
   if(saved === 'light') document.documentElement.style.setProperty('color-scheme','light');
   if(saved === 'dark')  document.documentElement.style.setProperty('color-scheme','dark');
 })();
 btnTheme.addEventListener('click', () => {
-  const cur = getComputedStyle(document.documentElement).getPropertyValue('color-scheme').trim();
+  // tenta ler o tema atual; se vier vazio, assume 'light' por padrão
+  let cur = getComputedStyle(document.documentElement).getPropertyValue('color-scheme').trim();
+  if(!cur) cur = 'light';
   const next = cur === 'dark' ? 'light' : 'dark';
   document.documentElement.style.setProperty('color-scheme', next);
   localStorage.setItem(THEME_KEY, next);
@@ -59,10 +64,13 @@ btnTheme.addEventListener('click', () => {
 function render(){
   // limpa colunas
   lanes.forEach(l => l.innerHTML = '');
-  // ordena por lane e order
+
+  // agrupa por lane e ordena por order
   const byLane = {max:[], mid:[], min:[]};
-  items.sort((a,b)=> (a.lane===b.lane ? a.order-b.order : 0))
-       .forEach(it => byLane[it.lane]?.push(it));
+  items
+    .slice() // evita mutar ao sort
+    .sort((a,b)=> (a.lane===b.lane ? a.order-b.order : a.lane.localeCompare(b.lane)))
+    .forEach(it => byLane[it.lane]?.push(it));
 
   Object.entries(byLane).forEach(([lane, arr])=>{
     const container = document.querySelector(`.lane-drop[data-lane="${lane}"]`);
@@ -78,7 +86,7 @@ function renderCard(it){
   const node = tpl.content.firstElementChild.cloneNode(true);
   node.dataset.id = it.id;
 
-  const pill = node.querySelector('[data-pill]');
+  const pill  = node.querySelector('[data-pill]');
   const title = node.querySelector('[data-title]');
   const notes = node.querySelector('[data-notes]');
   const due   = node.querySelector('[data-due]');
@@ -95,11 +103,7 @@ function renderCard(it){
     pill.style.borderColor = 'rgba(255,255,255,.15)';
   }
 
-  if(it.due){
-    due.textContent = 'Prazo: ' + fmtDate(it.due);
-  }else{
-    due.textContent = '';
-  }
+  due.textContent = it.due ? ('Prazo: ' + fmtDate(it.due)) : '';
 
   node.querySelector('[data-edit]').addEventListener('click', () => openEdit(it.id));
   node.querySelector('[data-delete]').addEventListener('click', () => del(it.id));
@@ -116,7 +120,7 @@ function add(data){
   items.push({
     id: uid(),
     title: data.title.trim(),
-    notes: data.notes?.trim() || '',
+    notes: (data.notes ?? '').trim(),
     color: data.color || '',
     lane: data.lane,
     order: maxOrder + 1,
@@ -128,7 +132,7 @@ function add(data){
 function update(id, data){
   const i = items.findIndex(x => x.id === id);
   if(i<0) return;
-  items[i] = {...items[i], ...data};
+  items[i] = {...items[i], ...data, title: data.title.trim(), notes: (data.notes ?? '').trim()};
   saveState(items);
   render();
 }
@@ -139,6 +143,7 @@ function del(id){
 }
 
 btnAdd.addEventListener('click', () => openCreate());
+
 function openCreate(){
   dialogTitle.textContent = 'Novo projeto';
   form.reset();
@@ -148,6 +153,7 @@ function openCreate(){
   dlg.showModal();
   setTimeout(()=> inpTitle.focus(), 50);
 }
+
 function openEdit(id){
   const it = items.find(x => x.id === id);
   if(!it) return;
@@ -166,8 +172,8 @@ form.addEventListener('submit', (e)=>{
   const data = {
     title: inpTitle.value,
     notes: inpNotes.value,
-    lane: inpLane.value,
-    due: inpDue.value,
+    lane:  inpLane.value,
+    due:   inpDue.value,
     color: inpColor.value
   };
   if(!data.title.trim()) return;
@@ -195,7 +201,6 @@ function onDragStart(e){
   e.dataTransfer.effectAllowed = 'move';
   e.dataTransfer.setData('text/plain', dragId);
 }
-
 function onDragEnd(e){
   e.currentTarget.classList.remove('dragging');
   dragId = null;
@@ -226,6 +231,8 @@ lanes.forEach(lane => {
 
     const newLane = lane.dataset.lane;
     const siblings = $$('.card', lane);
+
+    // Regrava lane + order de todos os cards da coluna
     siblings.forEach((el, idx) => {
       const cid = el.dataset.id;
       const it = items.find(x => x.id === cid);
@@ -233,6 +240,7 @@ lanes.forEach(lane => {
       it.lane = newLane;
       it.order = idx + 1;
     });
+
     saveState(items);
     render();
   });
@@ -266,7 +274,6 @@ document.addEventListener('keydown', (e)=>{
   }
 });
 
-
-
-
-
+// IMPORTANTE: não zerar o localStorage aqui.
+// Basta renderizar o que já foi carregado em `items`.
+render();
