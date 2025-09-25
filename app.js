@@ -1,4 +1,3 @@
-/* ========= Storage ========= */
 const LS_KEY = 'projetos_foco_v1';
 
 function loadState(){
@@ -10,7 +9,6 @@ function saveState(items){
   localStorage.setItem(LS_KEY, JSON.stringify(items));
 }
 
-/* ========= Helpers ========= */
 const $ = (sel, el=document) => el.querySelector(sel);
 const $$ = (sel, el=document) => Array.from(el.querySelectorAll(sel));
 const uid = () => Math.random().toString(36).slice(2,9);
@@ -21,10 +19,8 @@ function fmtDate(iso){
   return d.toLocaleDateString('pt-BR', {day:'2-digit', month:'2-digit', year:'numeric'});
 }
 
-/* ========= State ========= */
 let items = loadState(); // {id, title, notes, color, lane, order, due}
 
-/* ========= Elements ========= */
 const lanes = $$('.lane-drop');
 const board = $('#board');
 const badgeMax = document.querySelector('[data-count="max"]');
@@ -47,7 +43,6 @@ const btnClear = $('#btnClear');
 const btnTheme = $('#btnTheme');
 const tpl = $('#cardTemplate');
 
-/* ========= Theme ========= */
 const THEME_KEY = 'pf_theme';
 (function initTheme(){
   const saved = localStorage.getItem(THEME_KEY);
@@ -61,7 +56,6 @@ btnTheme.addEventListener('click', () => {
   localStorage.setItem(THEME_KEY, next);
 });
 
-/* ========= Render ========= */
 function render(){
   // limpa colunas
   lanes.forEach(l => l.innerHTML = '');
@@ -75,7 +69,6 @@ function render(){
     arr.forEach(it => container.appendChild(renderCard(it)));
   });
 
-  // badges
   badgeMax.textContent = byLane.max.length;
   badgeMid.textContent = byLane.mid.length;
   badgeMin.textContent = byLane.min.length;
@@ -108,18 +101,15 @@ function renderCard(it){
     due.textContent = '';
   }
 
-  // ações
   node.querySelector('[data-edit]').addEventListener('click', () => openEdit(it.id));
   node.querySelector('[data-delete]').addEventListener('click', () => del(it.id));
 
-  // Drag & Drop
   node.addEventListener('dragstart', onDragStart);
   node.addEventListener('dragend', onDragEnd);
 
   return node;
 }
 
-/* ========= CRUD ========= */
 function add(data){
   const laneItems = items.filter(x => x.lane === data.lane);
   const maxOrder = laneItems.length ? Math.max(...laneItems.map(x=>x.order)) : 0;
@@ -148,7 +138,6 @@ function del(id){
   render();
 }
 
-/* ========= Dialog ========= */
 btnAdd.addEventListener('click', () => openCreate());
 function openCreate(){
   dialogTitle.textContent = 'Novo projeto';
@@ -187,7 +176,6 @@ form.addEventListener('submit', (e)=>{
   dlg.close();
 });
 
-// cor
 colorRow.addEventListener('click', (e)=>{
   const btn = e.target.closest('.color-pick');
   if(!btn) return;
@@ -198,7 +186,6 @@ function selectColorButton(color){
   $$('.color-pick').forEach(b => b.classList.toggle('active', (b.dataset.color||'') === color));
 }
 
-/* ========= Drag & Drop ========= */
 let dragId = null;
 
 function onDragStart(e){
@@ -239,7 +226,6 @@ lanes.forEach(lane => {
 
     const newLane = lane.dataset.lane;
     const siblings = $$('.card', lane);
-    // Atualiza order conforme posição atual na DOM
     siblings.forEach((el, idx) => {
       const cid = el.dataset.id;
       const it = items.find(x => x.id === cid);
@@ -252,7 +238,6 @@ lanes.forEach(lane => {
   });
 });
 
-// encontra o elemento imediatamente após a posição do mouse
 function getDragAfterElement(container, y){
   const els = [...container.querySelectorAll('.card:not(.dragging)')];
   return els.reduce((closest, child) => {
@@ -266,7 +251,6 @@ function getDragAfterElement(container, y){
   }, { offset: Number.NEGATIVE_INFINITY }).element;
 }
 
-/* ========= Limpar ========= */
 btnClear.addEventListener('click', ()=>{
   const ok = confirm('Isso vai apagar todos os projetos. Deseja continuar?');
   if(!ok) return;
@@ -275,7 +259,6 @@ btnClear.addEventListener('click', ()=>{
   render();
 });
 
-/* ========= Keyboard quick add ========= */
 document.addEventListener('keydown', (e)=>{
   if((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'n'){
     e.preventDefault();
@@ -283,7 +266,6 @@ document.addEventListener('keydown', (e)=>{
   }
 });
 
-/* ========= Init (seeding) ========= */
 if(items.length === 0){
   items = [
     {id:uid(), title:'Estudar Power BI (prioridade!)', notes:'Medidas DAX e boas práticas.\nCriar dashboard exemplo.', color:'#7c3aed', lane:'max', order:1, due:''},
@@ -294,3 +276,4 @@ if(items.length === 0){
   saveState(items);
 }
 render();
+
