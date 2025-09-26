@@ -4,11 +4,12 @@
   --panel-2: #11162a;
   --text: #e6e9f2;
   --muted: #a7b0c0;
-  --brand: #7c3aed;     
-  --brand-2:#2563eb;     
-  --ok: #10b981;         
-  --warn:#f59e0b;        
-  --danger:#ef4444;      
+  --brand: #7c3aed;       /* roxo */
+  --brand-2:#2563eb;      /* azul */
+  --ok: #10b981;          /* VERDE: foco mínimo */
+  --warn:#f59e0b;         /* AMARELO: foco intermediário */
+  --danger:#ef4444;       /* VERMELHO: foco máximo */
+  --neutral:#6b7280;      /* CINZA: sem foco */
   --ring: rgba(124,58,237,.35);
   --shadow: 0 10px 30px rgba(0,0,0,.45);
   --radius: 18px;
@@ -24,6 +25,7 @@
     --panel-2:#f3f5fb;
     --text:#1e2432;
     --muted:#56607a;
+    --neutral:#6b7280;
     --shadow: 0 10px 30px rgba(16,24,40,.08);
     --ring: rgba(37,99,235,.25);
   }
@@ -41,7 +43,7 @@ body{
 }
 
 .app-shell{
-  max-width: 1200px;
+  max-width: 1400px;
   margin: 0 auto;
   padding: 18px;
 }
@@ -60,9 +62,10 @@ body{
 .brand{ display:flex; align-items:center; gap:10px; }
 .brand h1{ font-size: 20px; letter-spacing:.3px; margin:0; }
 .dot{ width:8px; height:8px; border-radius:999px; display:inline-block; opacity:.95}
-.dot-max{ background: var(--danger); } /* vermelho */
-.dot-mid{ background: var(--warn); }   /* amarelo */
-.dot-min{ background: var(--ok); }     /* verde */
+.dot-max{ background: var(--danger); }  /* vermelho */
+.dot-mid{ background: var(--warn); }    /* amarelo */
+.dot-min{ background: var(--ok); }      /* verde */
+.dot-none{ background: var(--neutral); }/* cinza */
 
 .actions{ display:flex; gap:10px; }
 
@@ -81,7 +84,7 @@ body{
 .board{
   margin-top: 18px;
   display:grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(4, 1fr); /* 4 colunas com "Sem foco" */
   gap: var(--gap);
 }
 
@@ -189,6 +192,7 @@ body{
 .row{ display:flex; gap:12px; align-items:flex-end; }
 .grow{ flex:1; }
 
+/* Seletor de cor removido nas versões anteriores — continua oculto */
 .color-row{ display:none; }
 .color-pick{ display:none; }
 
@@ -197,6 +201,10 @@ body{
 }
 .dialog .btn{ padding: 10px 14px; }
 
+/* Responsivo */
+@media (max-width: 1280px){
+  .board{ grid-template-columns: repeat(2, 1fr); }
+}
 @media (max-width: 980px){
   .board{ grid-template-columns: 1fr; }
   .lane{ min-height: auto; }
