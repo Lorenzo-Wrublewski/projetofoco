@@ -4,11 +4,11 @@
   --panel-2: #11162a;
   --text: #e6e9f2;
   --muted: #a7b0c0;
-  --brand: #7c3aed;       /* roxo */
-  --brand-2:#2563eb;      /* azul */
-  --ok: #10b981;
-  --warn:#f59e0b;
-  --danger:#ef4444;
+  --brand: #7c3aed;     
+  --brand-2:#2563eb;     
+  --ok: #10b981;         
+  --warn:#f59e0b;        
+  --danger:#ef4444;      
   --ring: rgba(124,58,237,.35);
   --shadow: 0 10px 30px rgba(0,0,0,.45);
   --radius: 18px;
@@ -59,10 +59,10 @@ body{
 
 .brand{ display:flex; align-items:center; gap:10px; }
 .brand h1{ font-size: 20px; letter-spacing:.3px; margin:0; }
-.dot{ width:8px; height:8px; border-radius:999px; display:inline-block; opacity:.9}
-.dot-max{ background: var(--brand); }
-.dot-mid{ background: var(--brand-2); }
-.dot-min{ background: #059669; }
+.dot{ width:8px; height:8px; border-radius:999px; display:inline-block; opacity:.95}
+.dot-max{ background: var(--danger); } /* vermelho */
+.dot-mid{ background: var(--warn); }   /* amarelo */
+.dot-min{ background: var(--ok); }     /* verde */
 
 .actions{ display:flex; gap:10px; }
 
@@ -136,7 +136,8 @@ body{
   display:flex; align-items:center; gap:10px; margin-bottom:6px;
 }
 .pill{
-  width: 12px; height: 12px; border-radius: 999px; background: transparent;
+  width: 12px; height: 12px; border-radius: 999px;
+  background: transparent;
   border: 1px solid rgba(255,255,255,.15);
 }
 .title{ margin:0; font-size: 15px; }
@@ -188,12 +189,8 @@ body{
 .row{ display:flex; gap:12px; align-items:flex-end; }
 .grow{ flex:1; }
 
-.color-row{ display:flex; gap:8px; }
-.color-pick{
-  width:28px; height:28px; border-radius:999px; border: 2px solid rgba(255,255,255,.2);
-  background: var(--c); cursor:pointer;
-}
-.color-pick.active{ outline: 3px solid var(--ring); }
+.color-row{ display:none; }
+.color-pick{ display:none; }
 
 .dialog-actions{
   display:flex; justify-content:flex-end; gap:8px; padding-top: 6px;
@@ -204,4 +201,3 @@ body{
   .board{ grid-template-columns: 1fr; }
   .lane{ min-height: auto; }
 }
-
