@@ -2,7 +2,8 @@
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=390, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
+  <!-- Viewport corrigido para responsividade real -->
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
   <title>Projeto Foco</title>
   <link rel="stylesheet" href="style.css">
   <link rel="shortcut icon" href="https://thumbs.dreamstime.com/b/%C3%ADcone-de-objetivo-foco-desenho-vetor-simples-utiliza%C3%A7%C3%A3o-para-projetos-web-design-meios-comunica%C3%A7%C3%A3o-impressos-ou-quaisquer-252599811.jpg" />
@@ -20,7 +21,7 @@
           Projeto Foco
         </h1>
       </div>
- 
+
       <div class="actions">
         <button id="btnAdd" class="btn primary" title="Adicionar projeto">+ Projeto</button>
         <button id="btnClear" class="btn subtle" title="Limpar tudo (com confirmação)">Limpar</button>
@@ -69,7 +70,7 @@
 
       <label class="field">
         <span>Título</span>
-        <input id="projTitle" type="text" placeholder="Ex.: Finalizar TCC" required maxlength="80">
+        <input id="projTitle" type="text" inputmode="text" placeholder="Ex.: Finalizar TCC" required maxlength="80" autocomplete="off">
       </label>
 
       <label class="field">
@@ -102,18 +103,33 @@
     </form>
   </dialog>
 
+  <!-- Template atualizado: inclui seletor 'Mover para...' que aparece no mobile -->
   <template id="cardTemplate">
     <article class="card" draggable="true">
       <div class="card-head">
         <div class="pill" data-pill></div>
         <h4 class="title" data-title></h4>
       </div>
+
       <p class="notes" data-notes></p>
+
       <div class="meta">
         <span class="due" data-due></span>
+
+        <!-- Só visível no mobile/touch -->
+        <label class="lane-picker-wrap">
+          <span class="lane-picker-label">Mover para:</span>
+          <select class="lane-picker" data-lanepick>
+            <option value="max">Foco máximo</option>
+            <option value="mid">Foco intermediário</option>
+            <option value="min">Foco mínimo</option>
+            <option value="none">Sem foco</option>
+          </select>
+        </label>
+
         <div class="buttons">
-          <button class="icon-btn" data-edit title="Editar">✏️</button>
-          <button class="icon-btn danger" data-delete title="Excluir">🗑️</button>
+          <button class="icon-btn" data-edit title="Editar" aria-label="Editar">✏️</button>
+          <button class="icon-btn danger" data-delete title="Excluir" aria-label="Excluir">🗑️</button>
         </div>
       </div>
     </article>
@@ -122,4 +138,3 @@
   <script src="app.js"></script>
 </body>
 </html>
-
