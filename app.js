@@ -1,8 +1,6 @@
-// LocalStorage keys
 const LS_KEY    = 'projetos_foco_v1';
 const THEME_KEY = 'pf_theme';
 
-// Helpers
 function loadState(){
   try{
     const raw = localStorage.getItem(LS_KEY);
@@ -25,18 +23,33 @@ function fmtDate(iso){
   return d.toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit',year:'numeric'});
 }
 
-// Ordenação por coluna
 const LANE_RANK = { max:0, mid:1, min:2, none:3 };
 
-// CSS vars (respeita tema)
 function cssVar(name){
   return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
 }
 function laneColor(lane){
-  if(lane === 'max')  return cssVar('--danger'); // vermelho
-  if(lane === 'mid')  return cssVar('--warn');   // amarelo
-  if(lane === 'min')  return cssVar('--ok');     // verde
-  return cssVar('--neutral');                    // cinza (sem foco)
+  if(lane === 'max')  return cssVar('--danger');
+  if(lane === 'mid')  return cssVar('--warn');   
+  if(lane === 'min')  return cssVar('--ok');    
+  return cssVar('--neutral');                    
+}
+
+function getSystemTheme(){
+  return window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+}
+function applyTheme(theme){
+  const html = document.documentElement;
+  html.setAttribute('data-theme', theme);
+  localStorage.setItem(THEME_KEY, theme);
+
+  const btn = $('#btnTheme');
+  if(btn){
+    const isDark = theme === 'dark';
+    btn.textContent = isDark ? '🌙' : '🌞';
+    btn.title = isDark ? 'Tema escuro' : 'Tema claro';
+    btn.setAttribute('aria-pressed', String(isDark));
+  }
 }
 
 let items = [];
@@ -62,21 +75,15 @@ window.addEventListener('DOMContentLoaded', () => {
   const btnTheme = $('#btnTheme');
   const tpl = $('#cardTemplate');
 
-  // Tema
-  (function initTheme(){
-    const saved = localStorage.getItem(THEME_KEY);
-    if(saved === 'light') document.documentElement.style.setProperty('color-scheme','light');
-    if(saved === 'dark')  document.documentElement.style.setProperty('color-scheme','dark');
-  })();
+  const savedTheme = localStorage.getItem(THEME_KEY);
+  applyTheme(savedTheme || getSystemTheme());
+
   btnTheme.addEventListener('click', () => {
-    let cur = getComputedStyle(document.documentElement).getPropertyValue('color-scheme').trim();
-    if(!cur) cur = 'light';
+    const cur = document.documentElement.getAttribute('data-theme') || getSystemTheme();
     const next = cur === 'dark' ? 'light' : 'dark';
-    document.documentElement.style.setProperty('color-scheme', next);
-    localStorage.setItem(THEME_KEY, next);
+    applyTheme(next);
   });
 
-  // Render
   function render(){
     lanes.forEach(l => l.innerHTML = '');
 
@@ -132,7 +139,6 @@ window.addEventListener('DOMContentLoaded', () => {
     return node;
   }
 
-  // CRUD
   function add(data){
     const laneItems = items.filter(x => x.lane === data.lane);
     const maxOrder = laneItems.length ? Math.max(...laneItems.map(x=>Number.isFinite(x.order)?x.order:0)) : 0;
@@ -165,7 +171,6 @@ window.addEventListener('DOMContentLoaded', () => {
     render();
   }
 
-  // Dialog
   btnAdd.addEventListener('click', () => openCreate());
 
   function openCreate(){
@@ -201,7 +206,6 @@ window.addEventListener('DOMContentLoaded', () => {
     dlg.close();
   });
 
-  // Drag & drop
   let dragId = null;
 
   function onDragStart(e){
@@ -266,7 +270,6 @@ window.addEventListener('DOMContentLoaded', () => {
     }, { offset: Number.NEGATIVE_INFINITY }).element;
   }
 
-  // Limpar tudo
   btnClear.addEventListener('click', ()=>{
     const ok = confirm('Isso vai apagar todos os projetos. Deseja continuar?');
     if(!ok) return;
@@ -275,7 +278,6 @@ window.addEventListener('DOMContentLoaded', () => {
     render();
   });
 
-  // Atalho novo projeto
   document.addEventListener('keydown', (e)=>{
     if((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'n'){
       e.preventDefault();
@@ -283,10 +285,8 @@ window.addEventListener('DOMContentLoaded', () => {
     }
   });
 
-  // Boot
   items = loadState();
 
-  // Inicializa "order" para cartões antigos, se faltar
   ['max','mid','min','none'].forEach(lname => {
     const laneItems = items.filter(x => x.lane === lname);
     if(laneItems.some(x => !Number.isFinite(x.order))){
