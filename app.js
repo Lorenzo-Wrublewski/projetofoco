@@ -1,6 +1,5 @@
-
-const LS_KEY   = 'projetos_foco_v1';
-const THEME_KEY = 'pf_theme';        
+const LS_KEY    = 'projetos_foco_v1';
+const THEME_KEY = 'pf_theme';
 
 function loadState(){
   try{
@@ -12,9 +11,7 @@ function loadState(){
     return [];
   }
 }
-function saveState(items){
-  localStorage.setItem(LS_KEY, JSON.stringify(items));
-}
+function saveState(items){ localStorage.setItem(LS_KEY, JSON.stringify(items)); }
 
 const uid = () => Math.random().toString(36).slice(2,9);
 const $  = (sel, el=document) => el.querySelector(sel);
@@ -26,7 +23,17 @@ function fmtDate(iso){
   return d.toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit',year:'numeric'});
 }
 
-const LANE_RANK = { max:0, mid:1, min:2 }; // ordenação determinística por coluna
+const LANE_RANK = { max:0, mid:1, min:2 }; // ordenação por coluna
+
+// Pega o valor HEX (ou RGB) da CSS var atual (respeita tema claro/escuro)
+function cssVar(name){
+  return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+}
+function laneColor(lane){
+  if(lane === 'max') return cssVar('--danger');
+  if(lane === 'mid') return cssVar('--warn');
+  return cssVar('--ok');
+}
 
 let items = [];
 
@@ -44,8 +51,6 @@ window.addEventListener('DOMContentLoaded', () => {
   const inpNotes = $('#projNotes');
   const inpLane = $('#projLane');
   const inpDue  = $('#projDue');
-  const inpColor= $('#projColor');
-  const colorRow = $('#colorRow');
 
   const btnAdd = $('#btnAdd');
   const btnClear = $('#btnClear');
@@ -103,13 +108,11 @@ window.addEventListener('DOMContentLoaded', () => {
     notes.textContent = it.notes || '';
     notes.style.display = it.notes ? 'block' : 'none';
 
-    if(it.color){
-      pill.style.background = it.color;
-      pill.style.borderColor = it.color + '88';
-    }else{
-      pill.style.background = 'transparent';
-      pill.style.borderColor = 'rgba(255,255,255,.15)';
-    }
+    // COR AUTOMÁTICA PELO LANE
+    const c = laneColor(it.lane);
+    pill.style.backgroundColor = c;
+    pill.style.borderColor = c;
+
     due.textContent = it.due ? ('Prazo: ' + fmtDate(it.due)) : '';
 
     node.querySelector('[data-edit]').addEventListener('click', () => openEdit(it.id));
@@ -121,6 +124,7 @@ window.addEventListener('DOMContentLoaded', () => {
     return node;
   }
 
+  // CRUD
   function add(data){
     const laneItems = items.filter(x => x.lane === data.lane);
     const maxOrder = laneItems.length ? Math.max(...laneItems.map(x=>Number.isFinite(x.order)?x.order:0)) : 0;
@@ -128,7 +132,6 @@ window.addEventListener('DOMContentLoaded', () => {
       id: uid(),
       title: String(data.title||'').trim(),
       notes: String(data.notes||'').trim(),
-      color: data.color || '',
       lane: data.lane,
       order: maxOrder + 1,
       due: data.due || ''
@@ -144,6 +147,7 @@ window.addEventListener('DOMContentLoaded', () => {
       ...data,
       title: String(data.title||'').trim(),
       notes: String(data.notes||'').trim()
+      // cor não é mais salva; fica automática
     };
     saveState(items);
     render();
@@ -160,7 +164,6 @@ window.addEventListener('DOMContentLoaded', () => {
     dialogTitle.textContent = 'Novo projeto';
     form.reset();
     inpId.value = '';
-    selectColorButton('');
     if (!('showModal' in dlg)) return;
     dlg.showModal();
     setTimeout(()=> inpTitle.focus(), 0);
@@ -174,7 +177,6 @@ window.addEventListener('DOMContentLoaded', () => {
     inpNotes.value = it.notes || '';
     inpLane.value = it.lane;
     inpDue.value = it.due || '';
-    selectColorButton(it.color || '');
     dlg.showModal();
   }
   form.addEventListener('submit', (e)=>{
@@ -183,24 +185,13 @@ window.addEventListener('DOMContentLoaded', () => {
       title: inpTitle.value,
       notes: inpNotes.value,
       lane:  inpLane.value,
-      due:   inpDue.value,
-      color: inpColor.value
+      due:   inpDue.value
     };
     if(!String(data.title).trim()) return;
     const id = inpId.value;
     if(id) update(id, data); else add(data);
     dlg.close();
   });
-
-  colorRow.addEventListener('click', (e)=>{
-    const btn = e.target.closest('.color-pick');
-    if(!btn) return;
-    selectColorButton(btn.dataset.color || '');
-  });
-  function selectColorButton(color){
-    inpColor.value = color;
-    $$('.color-pick').forEach(b => b.classList.toggle('active', (b.dataset.color||'') === color));
-  }
 
   let dragId = null;
 
@@ -283,12 +274,11 @@ window.addEventListener('DOMContentLoaded', () => {
 
   items = loadState();
 
-  const lanesList = ['max','mid','min'];
-  lanesList.forEach(lname => {
+  ['max','mid','min'].forEach(lname => {
     const laneItems = items.filter(x => x.lane === lname);
     if(laneItems.some(x => !Number.isFinite(x.order))){
       laneItems
-        .sort((a,b)=> (a.title||'').localeCompare(b.title||''))
+        .sort((a,b)=> (a.title||'').localeCompare(b.title||'')) // estável
         .forEach((it, idx) => { it.order = idx + 1; });
     }
   });
@@ -296,4 +286,3 @@ window.addEventListener('DOMContentLoaded', () => {
   saveState(items);
   render();
 });
-
