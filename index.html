@@ -2,7 +2,7 @@
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=390, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
   <title>Projeto Foco</title>
   <link rel="stylesheet" href="style.css">
   <link rel="shortcut icon" href="https://thumbs.dreamstime.com/b/%C3%ADcone-de-objetivo-foco-desenho-vetor-simples-utiliza%C3%A7%C3%A3o-para-projetos-web-design-meios-comunica%C3%A7%C3%A3o-impressos-ou-quaisquer-252599811.jpg" />
@@ -21,9 +21,8 @@
         </h1>
       </div>
 
-      
       <div class="actions">
-        <button id="btnAdd" class="btn primary" title="Adicionar projeto">+ Projeto</button>
+        <button id="btnAdd" class="btn primary desktop-only" title="Adicionar projeto">+ Projeto</button>
         <button id="btnClear" class="btn subtle" title="Limpar tudo (com confirmação)">Limpar</button>
         <button id="btnTheme" class="btn ghost" aria-pressed="false" title="Alternar tema">🌙</button>
       </div>
@@ -64,13 +63,15 @@
     </main>
   </div>
 
+  <button id="btnAddFab" class="fab mobile-only" title="Adicionar projeto">＋</button>
+
   <dialog id="projectDialog" class="dialog">
     <form id="projectForm" method="dialog">
       <h3 id="dialogTitle">Novo projeto</h3>
 
       <label class="field">
         <span>Título</span>
-        <input id="projTitle" type="text" placeholder="Ex.: Finalizar TCC" required maxlength="80">
+        <input id="projTitle" type="text" placeholder="Ex.: Finalizar TCC" required maxlength="80" autocomplete="off">
       </label>
 
       <label class="field">
@@ -113,6 +114,13 @@
       <div class="meta">
         <span class="due" data-due></span>
         <div class="buttons">
+          <select class="move-select mobile-only" aria-label="Mover para">
+            <option value="">Mover para…</option>
+            <option value="max">Foco máximo</option>
+            <option value="mid">Foco intermediário</option>
+            <option value="min">Foco mínimo</option>
+            <option value="none">Sem foco</option>
+          </select>
           <button class="icon-btn" data-edit title="Editar">✏️</button>
           <button class="icon-btn danger" data-delete title="Excluir">🗑️</button>
         </div>
@@ -123,4 +131,3 @@
   <script src="app.js"></script>
 </body>
 </html>
-
