@@ -7,6 +7,7 @@
   --text: #e6e9f2;
   --muted: #a7b0c0;
 
+  
   --brand: #7c3aed;       /* roxo */
   --brand-2:#2563eb;      /* azul */
   --ok: #10b981;          /* VERDE: foco mínimo */
@@ -243,3 +244,4 @@ html[data-theme="light"] textarea{
   .board{ grid-template-columns: 1fr; }
   .lane{ min-height: auto; }
 }
+
