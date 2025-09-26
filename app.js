@@ -2,8 +2,7 @@
 const LS_KEY    = 'projetos_foco_v1';
 const THEME_KEY = 'pf_theme';
 
-// Helpers
-function loadState(){
+ function loadState(){
   try{
     const raw = localStorage.getItem(LS_KEY);
     if(!raw) return [];
@@ -313,3 +312,4 @@ window.addEventListener('DOMContentLoaded', () => {
   saveState(items);
   render();
 });
+
