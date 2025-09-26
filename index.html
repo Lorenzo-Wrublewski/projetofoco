@@ -5,27 +5,26 @@
   <meta name="viewport" content="width=390, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
   <title>Projeto Foco</title>
   <link rel="stylesheet" href="style.css">
-  <link rel="shortcut icon" href="https://cdn-icons-png.flaticon.com/512/1828/1828178.png" />
+  <link rel="shortcut icon" href="https://thumbs.dreamstime.com/b/%C3%ADcone-de-objetivo-foco-desenho-vetor-simples-utiliza%C3%A7%C3%A3o-para-projetos-web-design-meios-comunica%C3%A7%C3%A3o-impressos-ou-quaisquer-252599811.jpg" />
 </head>
 <body>
   <div class="app-shell">
-<header class="topbar">
-  <div class="brand">
-    <span class="dot dot-max" title="Foco máximo"></span>
-    <span class="dot dot-mid" title="Foco intermediário"></span>
-    <span class="dot dot-min" title="Foco mínimo"></span>
-    <span class="dot dot-none" title="Sem foco"></span>
-    <h1>
-      <img src="https://cdn-icons-png.flaticon.com/512/1828/1828178.png" alt="Ícone Projeto" class="title-icon">
-      Projeto Foco
-    </h1>
-  </div>
-
+    <header class="topbar">
+      <div class="brand">
+        <span class="dot dot-max" title="Foco máximo"></span>
+        <span class="dot dot-mid" title="Foco intermediário"></span>
+        <span class="dot dot-min" title="Foco mínimo"></span>
+        <span class="dot dot-none" title="Sem foco"></span>
+        <h1>
+          <img src="https://cdn-icons-png.flaticon.com/512/1828/1828178.png" alt="Ícone Projeto" class="title-icon">
+          Projeto Foco
+        </h1>
+      </div>
 
       <div class="actions">
         <button id="btnAdd" class="btn primary" title="Adicionar projeto">+ Projeto</button>
         <button id="btnClear" class="btn subtle" title="Limpar tudo (com confirmação)">Limpar</button>
-        <button id="btnTheme" class="btn ghost" title="Alternar tema">🌓</button>
+        <button id="btnTheme" class="btn ghost" aria-pressed="false" title="Alternar tema">🌙</button>
       </div>
     </header>
 
@@ -64,7 +63,6 @@
     </main>
   </div>
 
-  <!-- Dialog SEM seletor de cor -->
   <dialog id="projectDialog" class="dialog">
     <form id="projectForm" method="dialog">
       <h3 id="dialogTitle">Novo projeto</h3>
@@ -124,5 +122,3 @@
   <script src="app.js"></script>
 </body>
 </html>
-
-
