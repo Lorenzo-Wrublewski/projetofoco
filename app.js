@@ -1,6 +1,8 @@
+// LocalStorage keys
 const LS_KEY    = 'projetos_foco_v1';
 const THEME_KEY = 'pf_theme';
 
+// Helpers
 function loadState(){
   try{
     const raw = localStorage.getItem(LS_KEY);
@@ -23,25 +25,28 @@ function fmtDate(iso){
   return d.toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit',year:'numeric'});
 }
 
-const LANE_RANK = { max:0, mid:1, min:2 }; // ordenação por coluna
+// Ordenação por coluna
+const LANE_RANK = { max:0, mid:1, min:2, none:3 };
 
-// Pega o valor HEX (ou RGB) da CSS var atual (respeita tema claro/escuro)
+// CSS vars (respeita tema)
 function cssVar(name){
   return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
 }
 function laneColor(lane){
-  if(lane === 'max') return cssVar('--danger');
-  if(lane === 'mid') return cssVar('--warn');
-  return cssVar('--ok');
+  if(lane === 'max')  return cssVar('--danger'); // vermelho
+  if(lane === 'mid')  return cssVar('--warn');   // amarelo
+  if(lane === 'min')  return cssVar('--ok');     // verde
+  return cssVar('--neutral');                    // cinza (sem foco)
 }
 
 let items = [];
 
 window.addEventListener('DOMContentLoaded', () => {
   const lanes = $$('.lane-drop');
-  const badgeMax = document.querySelector('[data-count="max"]');
-  const badgeMid = document.querySelector('[data-count="mid"]');
-  const badgeMin = document.querySelector('[data-count="min"]');
+  const badgeMax  = document.querySelector('[data-count="max"]');
+  const badgeMid  = document.querySelector('[data-count="mid"]');
+  const badgeMin  = document.querySelector('[data-count="min"]');
+  const badgeNone = document.querySelector('[data-count="none"]');
 
   const dlg = $('#projectDialog');
   const form = $('#projectForm');
@@ -57,6 +62,7 @@ window.addEventListener('DOMContentLoaded', () => {
   const btnTheme = $('#btnTheme');
   const tpl = $('#cardTemplate');
 
+  // Tema
   (function initTheme(){
     const saved = localStorage.getItem(THEME_KEY);
     if(saved === 'light') document.documentElement.style.setProperty('color-scheme','light');
@@ -70,10 +76,11 @@ window.addEventListener('DOMContentLoaded', () => {
     localStorage.setItem(THEME_KEY, next);
   });
 
+  // Render
   function render(){
     lanes.forEach(l => l.innerHTML = '');
 
-    const byLane = {max:[], mid:[], min:[]};
+    const byLane = {max:[], mid:[], min:[], none:[]};
     items
       .slice()
       .sort((a,b) => {
@@ -90,9 +97,10 @@ window.addEventListener('DOMContentLoaded', () => {
       arr.forEach(it => container.appendChild(renderCard(it)));
     });
 
-    badgeMax.textContent = byLane.max.length;
-    badgeMid.textContent = byLane.mid.length;
-    badgeMin.textContent = byLane.min.length;
+    badgeMax.textContent  = byLane.max.length;
+    badgeMid.textContent  = byLane.mid.length;
+    badgeMin.textContent  = byLane.min.length;
+    badgeNone.textContent = byLane.none.length;
   }
 
   function renderCard(it){
@@ -147,7 +155,6 @@ window.addEventListener('DOMContentLoaded', () => {
       ...data,
       title: String(data.title||'').trim(),
       notes: String(data.notes||'').trim()
-      // cor não é mais salva; fica automática
     };
     saveState(items);
     render();
@@ -158,6 +165,7 @@ window.addEventListener('DOMContentLoaded', () => {
     render();
   }
 
+  // Dialog
   btnAdd.addEventListener('click', () => openCreate());
 
   function openCreate(){
@@ -193,6 +201,7 @@ window.addEventListener('DOMContentLoaded', () => {
     dlg.close();
   });
 
+  // Drag & drop
   let dragId = null;
 
   function onDragStart(e){
@@ -257,6 +266,7 @@ window.addEventListener('DOMContentLoaded', () => {
     }, { offset: Number.NEGATIVE_INFINITY }).element;
   }
 
+  // Limpar tudo
   btnClear.addEventListener('click', ()=>{
     const ok = confirm('Isso vai apagar todos os projetos. Deseja continuar?');
     if(!ok) return;
@@ -265,6 +275,7 @@ window.addEventListener('DOMContentLoaded', () => {
     render();
   });
 
+  // Atalho novo projeto
   document.addEventListener('keydown', (e)=>{
     if((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'n'){
       e.preventDefault();
@@ -272,9 +283,11 @@ window.addEventListener('DOMContentLoaded', () => {
     }
   });
 
+  // Boot
   items = loadState();
 
-  ['max','mid','min'].forEach(lname => {
+  // Inicializa "order" para cartões antigos, se faltar
+  ['max','mid','min','none'].forEach(lname => {
     const laneItems = items.filter(x => x.lane === lname);
     if(laneItems.some(x => !Number.isFinite(x.order))){
       laneItems
