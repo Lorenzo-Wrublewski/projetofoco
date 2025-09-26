@@ -11,9 +11,10 @@
   <div class="app-shell">
     <header class="topbar">
       <div class="brand">
-        <span class="dot dot-max"></span>
-        <span class="dot dot-mid"></span>
-        <span class="dot dot-min"></span>
+        <span class="dot dot-max" title="Foco máximo"></span>
+        <span class="dot dot-mid" title="Foco intermediário"></span>
+        <span class="dot dot-min" title="Foco mínimo"></span>
+        <span class="dot dot-none" title="Sem foco"></span>
         <h1>Projeto Foco</h1>
       </div>
 
@@ -48,9 +49,18 @@
         </header>
         <div class="lane-drop" data-lane="min"></div>
       </section>
+
+      <section class="lane" data-lane="none">
+        <header class="lane-header">
+          <h2>Sem foco</h2>
+          <span class="badge" data-count="none">0</span>
+        </header>
+        <div class="lane-drop" data-lane="none"></div>
+      </section>
     </main>
   </div>
 
+  <!-- Dialog SEM seletor de cor -->
   <dialog id="projectDialog" class="dialog">
     <form id="projectForm" method="dialog">
       <h3 id="dialogTitle">Novo projeto</h3>
@@ -72,6 +82,7 @@
             <option value="max">Foco máximo</option>
             <option value="mid">Foco intermediário</option>
             <option value="min">Foco mínimo</option>
+            <option value="none">Sem foco</option>
           </select>
         </label>
 
