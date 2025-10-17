@@ -1,4 +1,3 @@
-// LocalStorage keys
 const LS_KEY    = 'projetos_foco_v1';
 const THEME_KEY = 'pf_theme';
 
@@ -25,21 +24,18 @@ function fmtDate(iso){
   return d.toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit',year:'numeric'});
 }
 
-// Ordenação por coluna
 const LANE_RANK = { max:0, mid:1, min:2, none:3 };
 
-// CSS vars (respeita tema)
 function cssVar(name){
   return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
 }
 function laneColor(lane){
-  if(lane === 'max')  return cssVar('--danger'); // vermelho
-  if(lane === 'mid')  return cssVar('--warn');   // amarelo
-  if(lane === 'min')  return cssVar('--ok');     // verde
-  return cssVar('--neutral');                    // cinza (sem foco)
+  if(lane === 'max')  return cssVar('--danger'); 
+  if(lane === 'mid')  return cssVar('--warn');   
+  if(lane === 'min')  return cssVar('--ok');     
+  return cssVar('--neutral');                   
 }
 
-// THEME
 function getSystemTheme(){
   return window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
 }
@@ -80,7 +76,6 @@ window.addEventListener('DOMContentLoaded', () => {
   const btnTheme = $('#btnTheme');
   const tpl = $('#cardTemplate');
 
-  // Init Theme
   const savedTheme = localStorage.getItem(THEME_KEY);
   applyTheme(savedTheme || getSystemTheme());
 
@@ -90,7 +85,6 @@ window.addEventListener('DOMContentLoaded', () => {
     applyTheme(next);
   });
 
-  // Render
   function render(){
     lanes.forEach(l => l.innerHTML = '');
 
@@ -130,7 +124,6 @@ window.addEventListener('DOMContentLoaded', () => {
     notes.textContent = it.notes || '';
     notes.style.display = it.notes ? 'block' : 'none';
 
-    // COR AUTOMÁTICA PELO LANE
     const c = laneColor(it.lane);
     pill.style.backgroundColor = c;
     pill.style.borderColor = c;
@@ -146,7 +139,6 @@ window.addEventListener('DOMContentLoaded', () => {
     return node;
   }
 
-  // CRUD
   function add(data){
     const laneItems = items.filter(x => x.lane === data.lane);
     const maxOrder = laneItems.length ? Math.max(...laneItems.map(x=>Number.isFinite(x.order)?x.order:0)) : 0;
@@ -179,7 +171,6 @@ window.addEventListener('DOMContentLoaded', () => {
     render();
   }
 
-  // Dialog
   btnAdd.addEventListener('click', () => openCreate());
 
   function openCreate(){
@@ -215,7 +206,6 @@ window.addEventListener('DOMContentLoaded', () => {
     dlg.close();
   });
 
-  // Drag & drop
   let dragId = null;
 
   function onDragStart(e){
@@ -280,7 +270,6 @@ window.addEventListener('DOMContentLoaded', () => {
     }, { offset: Number.NEGATIVE_INFINITY }).element;
   }
 
-  // Limpar tudo
   btnClear.addEventListener('click', ()=>{
     const ok = confirm('Isso vai apagar todos os projetos. Deseja continuar?');
     if(!ok) return;
@@ -289,7 +278,6 @@ window.addEventListener('DOMContentLoaded', () => {
     render();
   });
 
-  // Atalho novo projeto
   document.addEventListener('keydown', (e)=>{
     if((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'n'){
       e.preventDefault();
@@ -297,15 +285,13 @@ window.addEventListener('DOMContentLoaded', () => {
     }
   });
 
-  // Boot
   items = loadState();
 
-  // Inicializa "order" para cartões antigos, se faltar
   ['max','mid','min','none'].forEach(lname => {
     const laneItems = items.filter(x => x.lane === lname);
     if(laneItems.some(x => !Number.isFinite(x.order))){
       laneItems
-        .sort((a,b)=> (a.title||'').localeCompare(b.title||'')) // estável
+        .sort((a,b)=> (a.title||'').localeCompare(b.title||'')) 
         .forEach((it, idx) => { it.order = idx + 1; });
     }
   });
@@ -313,5 +299,6 @@ window.addEventListener('DOMContentLoaded', () => {
   saveState(items);
   render();
 });
+
 
 
